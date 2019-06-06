@@ -99,8 +99,9 @@ class lemmy():
         return [request_string, self.quick_connect(request_string)]
 
     def get_community(self, community_id=None, name=None, auth=None):
-        request_string = '{"op": "GetCommunity", "data": {"id": %s' % community_id
-        if name is not None: request_string += ', "name": "%s"' % name
+        request_string = '{"op": "GetCommunity", "data": {'
+        if community_id is not None: request_string += '"id": %d, ' % community_id
+        if name is not None: request_string += '"name": "%s"' % name
         if auth is not None: request_string += ', "auth": "%s"' % auth
         request_string += '}}'
         return [request_string, self.quick_connect(request_string)]
