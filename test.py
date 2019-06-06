@@ -82,7 +82,6 @@ class lemmy_test():
             self.log_file = "raw_log.txt"
             log_file = open(self.log_file, "w")
         else:
-            pass
             log_file = open(self.log_file, "a")
         if "{" not in log_info[1]:
             log_file.write("ERROR:\n")
