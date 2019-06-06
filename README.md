@@ -9,7 +9,7 @@ To run:
 2. create unique username and admin_username (and passwords if you prever) in conf.conf
 3. run test.py
 
-Logs are saved in raw_log.txt, each line corresponds to a request and response in the format of <timestamp>;<request>;<response> additionally an error line is logged for easy searching of errors. This is a rough logging method and will be improved in the future.
+Logs are saved in raw_log.txt, each line corresponds to a request and response in the format of timestamp;request;response additionally an error line is logged for easy searching of errors. This is a rough logging method and will be improved in the future.
 
 Other options in the configuration file do not currently work, but will work soon.
 
