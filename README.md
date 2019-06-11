@@ -1,6 +1,8 @@
 # Lemmy_API_test
 A test tool for the Lemmy API written in Python
 
+https://github.com/dessalines/lemmy
+
 As of right now this tool only runs expected behavior tests that require no auth. As further test sets are built this README will be updated.
 
 To run:
