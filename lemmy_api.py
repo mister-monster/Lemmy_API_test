@@ -40,7 +40,7 @@ class lemmy():
         return [request_string, self.quick_connect(request_string)]
 
     def ban_user(self, user_id, ban, auth, reason=None, expires=None):
-        request_string = '{"op": "BanUser", "data": {"user_id": %d, "ban": %s, "auth": "%s"' % (user_id, ban, auth)
+        request_string = '{"op": "BanUser", "data": {"user_id": %d, "ban": %s, "auth": "%s"' % (user_id, str(ban).lower(), auth)
         if reason is not None: request_string += ', "reason": "%s"' % reason
         if expires is not None: request_string += ', "expires": %d' % expires
         request_string += '}}'
@@ -49,7 +49,7 @@ class lemmy():
     # MOD FUNCTIONS. Only community moderators or instance admins will get a useful response.
     def ban_from_community(self, community_id, user_id, ban, auth, reason=None, expires=None):
         request_string = '{"op": "BanFromCommunity", "data": {"community_id": %d, "user_id": %d, "ban": %s, ' \
-                         '"auth": "%s"' % (community_id, user_id, ban, auth)
+                         '"auth": "%s"' % (community_id, user_id, str(ban).lower(), auth)
         if reason is not None: request_string += ', "reason": "%s"'
         if expires is not None: request_string += ', "expires": %d'
         request_string += '}}'
@@ -57,7 +57,7 @@ class lemmy():
 
     def add_mod(self, community_id, user_id, added, auth):
         request_string = '{"op": "AddModToCommunity", "data": {"community_id": %d, "user_id": %d, "added": %s, ' \
-                         '"auth": "%s"}}' % (community_id, user_id, added, auth)
+                         '"auth": "%s"}}' % (community_id, user_id, str(added).lower(), auth)
         return [request_string, self.quick_connect(request_string)]
 
     def edit_community(self, edit_id, name, title, auth, category_id, description=None, removed=None, deleted=None,
@@ -65,8 +65,8 @@ class lemmy():
         request_string = '{"op": "EditCommunity", "data": {"edit_id": %d, "name": "%s", "title": "%s", ' \
                          '"category_id": %d, "auth": "%s"' % (edit_id, name, title, category_id, auth)
         if description is not None: request_string += ', "description": "%s"' % description
-        if removed is not None: request_string += ', "removed": %s' % removed
-        if deleted is not None: request_string += ', "deleted": %s' % deleted
+        if removed is not None: request_string += ', "removed": %s' % str(removed).lower()
+        if deleted is not None: request_string += ', "deleted": %s' % str(deleted).lower()
         if reason is not None: request_string += ', "reason": "%s"'
         if expires is not None: request_string += ', "expires": %d'
         request_string += '}}'
@@ -86,6 +86,7 @@ class lemmy():
         return [request_string, self.quick_connect(request_string)]
 
     def get_modlog(self, mod_user_id=None, community_id=None, page=None, limit=None):
+        # TODO: sort out field comma formatting
         request_string = '{"op": "GetModlog", "data": {'
         if mod_user_id is not None: request_string += ', "mod_user_id": %d' % mod_user_id
         if community_id is not None: request_string += ', "community_id": %d' % community_id
@@ -99,6 +100,7 @@ class lemmy():
         return [request_string, self.quick_connect(request_string)]
 
     def get_community(self, community_id=None, name=None, auth=None):
+        # TODO: sort out this field comma formatting issue
         request_string = '{"op": "GetCommunity", "data": {'
         if community_id is not None: request_string += '"id": %d, ' % community_id
         if name is not None: request_string += '"name": "%s"' % name
@@ -116,7 +118,7 @@ class lemmy():
 
     def get_user_details(self, sort, saved_only, user_id=None, username=None, page=None, limit=None,
                          community_id=None, auth=None):
-        request_string = '{"op": "GetUserDetails", "data": {"sort": "%s", "saved_only":  %s' % (sort, saved_only)
+        request_string = '{"op": "GetUserDetails", "data": {"sort": "%s", "saved_only": %s' % (sort, str(saved_only).lower())
         if user_id is not None: request_string += ', "user_id": %d' % user_id
         if username is not None: request_string += ', "username": "%s"' % username
         if page is not None: request_string += ', "page": %d' % page
@@ -126,11 +128,10 @@ class lemmy():
         request_string += '}}'
         return [request_string, self.quick_connect(request_string)]
 
-    def register_new_user(self, username, password, email=None, admin=None):
+    def register_new_user(self, username, password, admin, email=None):
         request_string = '{"op": "Register", "data": { "username": "%s", "password": "%s", ' \
-                         '"password_verify": "%s"' % (username, password, password)
+                         '"password_verify": "%s", "admin": %s' % (username, password, password, str(admin).lower())
         if email is not None: request_string += ', "email": "%s"' % email
-        if admin is not None: request_string += ', "admin": %s' % admin
         request_string += '}}'
         return [request_string, self.quick_connect(request_string)]
 
@@ -157,7 +158,7 @@ class lemmy():
         request_string = '{"op": "Login", "data": {"username_or_email": "%s", "password": "%s"}}' % (login, password)
         return [request_string, self.quick_connect(request_string)]
 
-    def create_community(self, name,title, category_id, auth, description=None):
+    def create_community(self, name, title, category_id, auth, description=None):
         request_string = '{"op": "CreateCommunity", "data": {"name": "%s", "title": "%s", ' \
                          '"category_id": %d, "auth": "%s"' % (name, title, category_id, auth)
         if description is not None: request_string += ', "description": "%s"' % description
@@ -166,7 +167,7 @@ class lemmy():
 
     def get_inbox(self, sort, auth, unread_only, page=None, limit=None):
         request_string = '{"op": "GetReplies", "data": ("sort": "%s", "unread_only": %s, ' \
-                         '"auth": "%s"' % (sort, unread_only, auth)
+                         '"auth": "%s"' % (sort, str(unread_only).lower(), auth)
         if page is not None: request_string += ', "page": %d' % page
         if limit is not None: request_string += ', "limit": %d' % limit
         request_string += '}}'
@@ -178,7 +179,7 @@ class lemmy():
 
     def follow_community(self, community_id, follow, auth):
         request_string = '{"op": "FollowCommunity", "data": {"community_id": %d, "follow": %s, "auth": "%s"' \
-                         '}}' % (community_id, follow, auth)
+                         '}}' % (community_id, str(follow).lower(), auth)
         return [request_string, self.quick_connect(request_string)]
 
     def create_post(self, name, community_id, auth, url=None, body=None):
@@ -204,16 +205,16 @@ class lemmy():
                          '"name": "%s", "auth": "%s"' % (edit_id, creator_id, community_id, name, auth)
         if url is not None: request_string += ', "url": "%s"' % url
         if body is not None: request_string += ', "body": "%s"' % body
-        if removed is not None: request_string += ', "removed": %s' % removed
-        if deleted is not None: request_string += ', "deleted": %s' % deleted
-        if locked is not None: request_string += ', "locked": %s' % locked
+        if removed is not None: request_string += ', "removed": %s' % str(removed).lower()
+        if deleted is not None: request_string += ', "deleted": %s' % str(deleted).lower()
+        if locked is not None: request_string += ', "locked": %s' % str(locked).lower()
         if reason is not None: request_string += ', "reason": "%s"' % reason
         request_string += '}}'
         return [request_string, self.quick_connect(request_string)]
 
     def save_post(self, post_id, save, auth):
         request_string = '{"op": "SavePost", "data": {"post_id": %d, "save": %s, "auth": "%s"' \
-                         '}}' % (post_id, save, auth)
+                         '}}' % (post_id, str(save).lower(), auth)
         return [request_string, self.quick_connect(request_string)]
 
     def create_comment(self, content, post_id, auth, parent_id=None, edit_id=None):
@@ -231,16 +232,16 @@ class lemmy():
         request_string = '{"op": "EditComment", "data": {"content": "%s", "edit_id": %d, "creator_id": %d, ' \
                          '"post_id": %d, "auth": "%s"' % (content, edit_id, creator_id, post_id, auth)
         if parent_id is not None: request_string += ', "parent_id": %d' % parent_id
-        if removed is not None: request_string += ', "removed": %s' % removed
-        if deleted is not None: request_string += ', "deleted": %s' % deleted
+        if removed is not None: request_string += ', "removed": %s' % str(removed).lower()
+        if deleted is not None: request_string += ', "deleted": %s' % str(deleted).lower()
         if reason is not None: request_string += ', "reason": "%s"' % reason
-        if read is not None: request_string += ', "read": %s' % read
+        if read is not None: request_string += ', "read": %s' % str(read).lower()
         request_string += '}}'
         return [request_string, self.quick_connect(request_string)]
 
     def save_comment(self, comment_id, save, auth):
         request_string = '{"op": "SaveComment", "data": {"comment_id": %d, "save": %s, "auth": "%s"' \
-                        '}}' % (comment_id, save, auth)
+                        '}}' % (comment_id, str(save).lower(), auth)
         return [request_string, self.quick_connect(request_string)]
 
     def create_comment_like(self, comment_id, post_id, score, auth):
