@@ -166,7 +166,7 @@ class lemmy():
         return [request_string, self.quick_connect(request_string)]
 
     def get_inbox(self, sort, auth, unread_only, page=None, limit=None):
-        request_string = '{"op": "GetReplies", "data": ("sort": "%s", "unread_only": %s, ' \
+        request_string = '{"op": "GetReplies", "data": {"sort": "%s", "unread_only": %s, ' \
                          '"auth": "%s"' % (sort, str(unread_only).lower(), auth)
         if page is not None: request_string += ', "page": %d' % page
         if limit is not None: request_string += ', "limit": %d' % limit
@@ -184,7 +184,7 @@ class lemmy():
 
     def create_post(self, name, community_id, auth, url=None, body=None):
         request_string = '{"op": "CreatePost", "data": {"name": "%s", "community_id": %d, ' \
-                         '"auth": "%s"}}' % (name, community_id, auth)
+                         '"auth": "%s"' % (name, community_id, auth)
         if url is not None: request_string += ', "url": "%s"' % url
         if body is not None: request_string += ', "body": "%s"' % body
         request_string += '}}'
@@ -219,7 +219,7 @@ class lemmy():
 
     def create_comment(self, content, post_id, auth, parent_id=None, edit_id=None):
         request_string = '{"op": "CreateComment", "data": {"content": "%s", "post_id": %d, ' \
-                         '"auth": "%s"}}' % (content, post_id, auth)
+                         '"auth": "%s"' % (content, post_id, auth)
         if parent_id is not None: request_string += ', "parent_id": %d' % parent_id
         if edit_id is not None: request_string += ', "edit_id": %d' % edit_id
         request_string += '}}'
