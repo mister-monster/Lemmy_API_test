@@ -7,7 +7,8 @@ import json
 
 class lemmy_test():
     def __init__(self):
-        self.api = "wss://dev.lemmy.ml/api/v1/ws"  # default; if the value is set in conf then that one is read
+        self.api = "ws://127.0.0.1:8536/api/v1/ws" # default; if the value is set in conf then that one is read
+        #TODO: will not read api from conf for some reason, til it is fixed it must be changed here
         self.lemmy = lemmy_api.lemmy(self.api)
         self.log_file = None
         # admin conf settings
@@ -19,6 +20,11 @@ class lemmy_test():
         self.username = str()
         self.password = str()
         self.uname_counter = int(0)
+        # community and post titles
+        self.community_name = str()
+        self.post_title = str()
+        self.community_counter = int(0)
+        self.post_counter = int(0)
         # test options, read from conf
         self.run_general_expected_behavior_tests = bool()
         self.run_user_expected_behavior_tests = bool()
@@ -37,12 +43,16 @@ class lemmy_test():
     # master function, this is the main function that is called
     def test_master(self):
         self.read_conf()
+        #self.increment_username()
+        #self.increment_admin_username()
         if self.run_general_expected_behavior_tests:
-            #self.logging("{Running general functions expected behavior tests...}")
             self.general_functions_expected_behavior()
         if self.run_user_expected_behavior_tests:
-            #self.logging("{Running user functions expected behavior tests...}")
             self.user_functions_expected_behavior()
+        if self.run_mod_expected_behavior_tests:
+            self.mod_functions_expected_behavior()
+        if self.run_admin_expected_behavior_tests:
+            self.admin_functions_expected_behavior()
 
 
     # GENERAL FUNCTIONS TEST. This function runs expected behavior tests for API calls that do not require auth.
@@ -59,21 +69,63 @@ class lemmy_test():
         time.sleep(2)
         self.logging(self.lemmy.list_communities(sort="Hot"))
         time.sleep(2)
-        self.logging(self.lemmy.get_user_details("Hot", True, username="dessalines"))
+        self.logging(self.lemmy.get_user_details("Hot", True, username="Admin01"))
         time.sleep(2)
-        #self.logging(self.lemmy.register_new_user(username=self.username, password=self.password))
+        self.logging(self.lemmy.register_new_user(username=self.username, password=self.password, admin=False))
+        #TODO: increment usernames, save usernames to list as they are created if needed
         #self.increment_username()
-        #time.sleep(20)
-        self.logging(self.lemmy.get_posts(type_="All", sort="All"))
+        time.sleep(20)
+        self.logging(self.lemmy.get_posts(type_="All", sort="TopAll"))
         time.sleep(2)
         self.logging(self.lemmy.get_post(post_id=1)) # TODO: get post id from get_posts and use it here
         time.sleep(2)
 
     def user_functions_expected_behavior(self):
-        self.logging(self.lemmy.login(login=self.username, password=self.password))
+        response = self.lemmy.login(login=self.username, password=self.password)
+        self.logging(response)
+        auth = json.loads(response[1]).get('jwt')
+        time.sleep(2)
+        self.logging(self.lemmy.create_community(name=self.community_name, title="test community", category_id=1, auth=auth))
+        time.sleep(20)
+        self.logging(self.lemmy.get_inbox(sort="TopAll", auth=auth, unread_only=False))
+        time.sleep(2)
+        self.logging(self.lemmy.mark_all_read(auth=auth))
+        response = self.lemmy.get_community(name=self.community_name)
+        community_id = json.loads(response[1]).get('community').get('id')
+        time.sleep(2)
+        self.logging(self.lemmy.follow_community(community_id=community_id, follow=True, auth=auth))
+        time.sleep(2)
+        response = self.lemmy.create_post(name=self.post_title, community_id=community_id, auth=auth, body="test post")
+        self.logging(response)
+        post_id = json.loads(response[1]).get('post').get('id')
+        post_creator_id = json.loads(response[1]).get('post').get('user_id')
+        time.sleep(20)
+        self.logging(self.lemmy.create_post_like(post_id=post_id, auth=auth, score=-1))
+        time.sleep(2)
+        self.logging(self.lemmy.edit_post(edit_id=post_id, creator_id=post_creator_id, community_id=community_id,
+                                          name=str(self.post_title + "_edited"), auth=auth, body="test_post_edited"))
+        time.sleep(2)
+        self.logging(self.lemmy.save_post(post_id=post_id, save=True, auth=auth))
+        time.sleep(2)
+        response = self.lemmy.create_comment(content="test comment", post_id=post_id, auth=auth)
+        self.logging(response)
+        comment_id = json.loads(response[1]).get('comment').get('id')
+        comment_creator_id = json.loads(response[1]).get('comment').get('user_id')
+        time.sleep(2)
+        self.logging(self.lemmy.edit_comment(content="test comment edited", edit_id=comment_id,
+                                             creator_id=comment_creator_id, post_id=post_id, auth=auth))
+        time.sleep(2)
+        self.logging(self.lemmy.save_comment(comment_id=comment_id, save=True, auth=auth))
+        time.sleep(2)
+        self.logging(self.lemmy.create_comment_like(comment_id=comment_id, post_id=post_id, score=-1, auth=auth))
         time.sleep(2)
 
 
+    def mod_functions_expected_behavior(self):
+        pass
+
+    def admin_functions_expected_behavior(self):
+        pass
 
     def logging(self, log_info):
         timestamp = int(time.time())
@@ -85,15 +137,25 @@ class lemmy_test():
             log_file = open(self.log_file, "a")
         if "{" not in log_info[1]:
             log_file.write("ERROR:\n")
-        log_file.write(str(timestamp) + ";" + str(log_info[0]) + ";" + str(log_info[1]) + "\n")
+        log_line =  str(timestamp) + ";" + str(log_info[0]) + ";" + str(log_info[1]) + "\n"
+        log_file.write(log_line)
+        print(log_line)
 
     def increment_username(self):
-        self.username = self.username + str(self.uname_counter)
+        self.username = str(self.username + str(self.uname_counter))
         self.uname_counter += 1
 
     def increment_admin_username(self):
-        self.admin_username = self.admin_username + str(self.auname_counter)
+        self.admin_username = str(self.admin_username + str(self.auname_counter))
         self.auname_counter += 1
+
+    def increment_community_name(self):
+        self.community_name = str(self.community_name + str(self.community_counter))
+        self.community_counter += 1
+
+    def increment_post_title(self):
+        self.post_title = str(self.post_title + str(self.post_counter))
+        self.post_counter += 1
 
     def read_conf(self):
         conf = open("conf.conf")
@@ -108,16 +170,21 @@ class lemmy_test():
                 line[1] = line[1].replace("\n","")
                 if line[0] == "server":
                     self.api = str(line[1])
+                    #TODO: what on earth is going on with the url string from the conf?
                 elif line[0] == "create_admin":
-                    self.create_admin = bool(line[1])
+                    self.create_admin = line[1]
                 elif line[0] == "admin_username":
-                    self.admin_username = bool(line[1])
+                    self.admin_username = line[1]
                 elif line[0] == "admin_password":
-                    self.admin_password = bool(line[1])
+                    self.admin_password = line[1]
                 elif line[0] == "username":
-                    self.username = bool(line[1])
+                    self.username = line[1]
                 elif line[0] == "password":
-                    self.username = bool(line[1])
+                    self.password = line[1]
+                elif line[0] == "community_name":
+                    self.community_name = line[1]
+                elif line[0] == "post_title":
+                    self.post_title = line[1]
                 elif line[0] == "run_general_expected_behavior_tests":
                     self.run_general_expected_behavior_tests = self.str_to_bool(line[1])
                 elif line[0] == "run_user_expected_behavior_tests":
